@@ -1,60 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Winning Team</title>
-	<style>
-		body {
-    height: 100vh;
-}
-
-div#controls {
-    display: flex;
-    position: relative;
-    margin: auto;
-    height: 100%;
-    text-align: center;
-}
-
-div#inner {
-    margin: auto;
-}
-
-button {
-    padding: 5px;
-    margin: 5px;
-    font-size: 1.2rem;
-}
-	</style>
-</head>
-<body>
-    <div id="controls">
-        <div id="inner">
-            <button id="FL">FL</button>
-            <button id="FWD">FORWARD</button>
-            <button id="FR">FR</button>
-            <br>
-            <button id="LFT">TURN LEFT</button>
-            <button id="RGT">TURN RIGHT</button>
-            <br>
-            <button id="BL">BL</button>
-            <button id="BWD">BACKWARD</button>
-            <button id="BR">BR</button>
-            <br>
-            <div>
-                <input type="range" id="speed" oninput="setSpeed()" value="50" min="0" max="100"
-                width="2000px">
-                <br>
-                <label id="speedLabel"></label>
-            </div>
-        </div>
-    </div>
-	<script>
-	let socket;
-		try {
-    socket = new WebSocket('ws://' + window.location.hostname + ':81/');
+try {
+    const socket = new WebSocket('ws://' + window.location.hostname + ':81/');
 } catch (e) {
     console.log('Can\'t connect to web socket');
 }
@@ -103,8 +48,6 @@ document.onkeydown = (e) => {
         break;
     }
 }   
-
-document.onkeyup = () => stop();
 
 const setSpeed = () => {
     speed = document.getElementById("speed").value;
@@ -185,6 +128,3 @@ function stop() {
 
     return false;
 }
-	</script>
-</body>
-</html>

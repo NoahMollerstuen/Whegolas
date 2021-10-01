@@ -1,35 +1,14 @@
-/*------------------------------------------------------------------------------
-  01/10/2020
-  Author: Makerbro
-  Platforms: ESP8266
-  Language: C++/Arduino
-  File: webserver_rc_robot.ino
-  ------------------------------------------------------------------------------
-  Description: 
-  Code for YouTube video showing how to build a wheeled robot, and control its
-  movement over Wi-Fi:
-  https://youtu.be/4gl7IZLo7yA
-
-  Do you like my videos? You can support the channel:
-  https://patreon.com/acrobotic
-  https://paypal.me/acrobotic
-  ------------------------------------------------------------------------------
-  Please consider buying products from ACROBOTIC to help fund future
-  Open-Source projects like this! We'll always put our best effort in every
-  project, and release all our design files and code for you to use. 
-
-  https://acrobotic.com/
-  https://amazon.com/acrobotic
-  ------------------------------------------------------------------------------
-  License:
-  Please see attached LICENSE.txt file for details.
-------------------------------------------------------------------------------*/
 // curl -F "file=@$PWD/index.html" 192.168.1.XX/upload
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include <FS.h>
 #include <WebSocketsServer.h>
 #include <ArduinoJson.h>
+
+#define LEFT_MOTOR_PIN_1 9
+#define LEFT_MOTOR_PIN_2 10
+#define RIGHT_MOTOR_PIN_1 4
+#define RIGHT_MOTOR_PIN_2 5
 
 ESP8266WebServer server;
 char* ssid = "Whegolas";
@@ -42,6 +21,11 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 
 void setup()
 {
+  pinMode(LEFT_MOTOR_PIN_1, OUTPUT);
+  pinMode(LEFT_MOTOR_PIN_2, OUTPUT);
+  pinMode(RIGHT_MOTOR_PIN_1, OUTPUT);
+  pinMode(RIGHT_MOTOR_PIN_2, OUTPUT);
+
   SPIFFS.begin();
   Serial.begin(115200);
   delay(2000);
@@ -63,8 +47,44 @@ void setup()
   webSocket.onEvent(webSocketEvent);
 }
 
+void setMotorSpeed(int pin1, int pin2, double motor_speed) {
+  Serial.println(motor_speed);
+  if(motor_speed == 0) {
+    analogWrite(pin1, 0);
+    analogWrite(pin2, 0);
+  } else if(motor_speed > 0){
+    analogWrite(pin2, 0);
+    analogWrite(pin1, (double) (motor_speed * 255));
+  } else {
+    analogWrite(pin1, 0);
+    analogWrite(pin2, (double) (-motor_speed * 255));
+  }
+}
+
+void driveMotors(double forwards, double turnSpeed) {
+  double left = forwards + turnSpeed;
+  double right = forwards - turnSpeed;
+
+  double max_value = max(max(left, right), 1.0);
+  left = left / max_value;
+  right = right / max_value;
+
+  setMotorSpeed(LEFT_MOTOR_PIN_1, LEFT_MOTOR_PIN_2, left);
+  setMotorSpeed(RIGHT_MOTOR_PIN_1, RIGHT_MOTOR_PIN_1, right);
+}
+
 void loop()
 {
+//  for(double i=-1.0; i < 1; i+=0.01) {
+//    setMotorSpeed(LEFT_MOTOR_PIN_1, LEFT_MOTOR_PIN_2, i);
+//    delay(10);
+//  }
+//
+//  for(double i=1.0; i > -1; i-=0.01) {
+//    setMotorSpeed(LEFT_MOTOR_PIN_1, LEFT_MOTOR_PIN_2, i);
+//    delay(10);
+//  }
+  
   webSocket.loop();
   server.handleClient();
 }
@@ -81,26 +101,15 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t length)
     // deserialize the data
     DeserializationError error = deserializeJson(doc, payload_str);
     // parse the parameters we expect to receive (TO-DO: error handling)
-    String dir = doc["direction"];
-//    Serial.print("direction: ");
-//    Serial.println(dir);
-    if(dir == "STP") {
-      Serial.println("STOP");
-    } else {
-      int speed = doc["speed"];
-      // on the page speed goes from 0 to 100. scale it between 0 and 255:
-      speed = map(speed, 0, 100, 0, 255);
+    String turnSpeed = doc["xSpeed"]; // Right is positive
+    String forwardSpeed = doc["ySpeed"]; // Forward is positive
 
-      if(dir == "FWD") {
-        Serial.println("FORWARD");
-      } else if(dir == "BWD") {
-        Serial.println("BACKWARD");
-      } else if(dir == "RGT") {
-        Serial.println("RIGHT");
-      } else if(dir == "LFT") {
-        Serial.println("LEFT");
-      }
-    }
+    Serial.print("forward:");
+    Serial.print(forwardSpeed);
+    Serial.print(", turn:");
+    Serial.println(turnSpeed);
+
+    driveMotors(forwardSpeed.toDouble(), turnSpeed.toDouble());
   }
 }
 

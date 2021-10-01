@@ -1,0 +1,21 @@
+body {
+    height: 100vh;
+}
+
+div#controls {
+    display: flex;
+    position: relative;
+    margin: auto;
+    height: 100%;
+    text-align: center;
+}
+
+div#inner {
+    margin: auto;
+}
+
+button {
+    padding: 5px;
+    margin: 5px;
+    font-size: 1.2rem;
+}
